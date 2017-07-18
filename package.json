@@ -1,0 +1,17 @@
+{
+  "name": "NSFW.rs",
+  "version": "0.0.2",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Andrej Budinčević <andrej@nsfw.rs>",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "cors": "^2.8.4",
+    "express": "^4.15.3",
+    "ioredis": "^3.1.1"
+  }
+}
