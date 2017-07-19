@@ -25,6 +25,8 @@ app.get('/', (req, res) => {
 app.post('/api/random', (req, res) => {
 	redis.smembers('nsfw').then(data => {
 		if (data && data.length > 0) {
+			data = data.filter(i => i !== getCode(req.body.last))
+
 			res.send(JSON.stringify({
 				status: 200,
 				data: `http://i.imgur.com/${data[parseInt(Math.random() * data.length)]}.jpg`

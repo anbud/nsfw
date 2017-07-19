@@ -3,7 +3,6 @@ var len = 5
 var prefCount = 5
 
 var prefetched = []
-var last = ''
 
 var generate = function(target) {
 	var str = ''
@@ -22,14 +21,13 @@ var next = function() {
 	if (prefetched.length > 0) {
 		$('#image').attr('src', prefetched.pop())
 	} else {
-		$.post('http://localhost:3000/api/random', function(data) {
+		$.post('http://localhost:3000/api/random', {
+			last: $('#image').attr('src')
+		}, function(data) {
 			var d = JSON.parse(data)
 
-			if (d.status === 200 && last !== d.data) {
+			if (d.status === 200) {
 				$('#image').attr('src', d.data)
-				last = d.data
-			} else {
-				generate()
 			}
 		})
 	}
@@ -41,6 +39,10 @@ $(document).ready(function() {
 	next()
 	
 	$('#image').on('click', next)
+
+	$('#prefetch').on('error', function() {
+		generate('prefetch')
+	})
 
 	$('#prefetch').on('load', function() {
 		var obj = $('#prefetch')
