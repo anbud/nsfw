@@ -1,11 +1,11 @@
 var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 var len = 5
+var prefCount = 5
 
 var prefetched = []
+var last = ''
 
 var generate = function(target) {
-	target = target || 'loading'
-
 	var str = ''
 
 	for (var i = 0; i < len; i++) {
@@ -18,68 +18,34 @@ var generate = function(target) {
 	$('#' + target).attr('src', url)
 }
 
-var prefetch = function(count) {
-	for (var i = 0; i < prefetched.length - count, i++) {
-		generate('prefetch')
-	}
-}
-
-var getFirst = function() {
-	$.post('http://localhost:3000/api/random', function(data) {
-		var d = JSON.parse(data)
-
-		if (d.status === 200) {
-			$('#image').attr('src', d.data)
-		} else {
-			generate()
-		}
-	})
-
-	prefetch(3)
-}
-
 var next = function() {
-	if (prefetch.length > 0) {
+	if (prefetched.length > 0) {
 		$('#image').attr('src', prefetched.pop())
-
-		prefetch(3)
 	} else {
-		generate()
+		$.post('http://localhost:3000/api/random', function(data) {
+			var d = JSON.parse(data)
+
+			if (d.status === 200 && last !== d.data) {
+				$('#image').attr('src', d.data)
+				last = d.data
+			} else {
+				generate()
+			}
+		})
 	}
+
+	generate('prefetch')
 }
 
 $(document).ready(function() {
-	getFirst()
+	next()
 	
 	$('#image').on('click', next)
-
-	$('#loading').on('load', function() {
-		var obj = $('#loading')
-
-		if (obj.attr('src') === "") {
-			return
-		}
-
-		if (((obj.width() == 161) && (obj.height() == 81)) || ((obj.width() == 83) && (obj.height() == 22))) {
-			generate()
-		} else {
-			$.post('http://localhost:3000/api/check', {
-		    	url: obj.attr('src').slice(0, obj.attr('src').length - 5) + 'm.jpg'
-			}, function(data) {
-				if (!JSON.parse(data).data) {
-					generate()
-				} else {
-					$('#image').attr('src', obj.attr('src').slice(0, obj.attr('src').length - 5) + '.jpg')
-					obj.attr('src', '')
-				}
-			})
-		}
-	})
 
 	$('#prefetch').on('load', function() {
 		var obj = $('#prefetch')
 
-		if (obj.attr('src') === "") {
+		if (obj.attr('src') === '') {
 			return
 		}
 
@@ -93,6 +59,10 @@ $(document).ready(function() {
 					generate('prefetch')
 				} else {
 					prefetched.push(obj.attr('src').slice(0, obj.attr('src').length - 5) + '.jpg')
+
+					if (prefetched.length < prefCount) {
+						generate('prefetch')
+					}
 				}
 			})
 		}

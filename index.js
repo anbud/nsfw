@@ -22,6 +22,22 @@ app.get('/', (req, res) => {
 	res.send('NSFW.rs API Endpoints')
 })
 
+app.post('/api/random', (req, res) => {
+	redis.smembers('nsfw').then(data => {
+		if (data && data.length > 0) {
+			res.send(JSON.stringify({
+				status: 200,
+				data: `http://i.imgur.com/${data[parseInt(Math.random() * data.length)]}.jpg`
+			}))
+		} else {
+			res.send(JSON.stringify({
+				status: 404,
+				error: '[404] Data not found.'
+			}))
+		}
+	})
+})
+
 app.post('/api/check', (req, res) => {
 	if (req.body.url) {
 		req.body.url = req.body.url.replace('https', 'http')
@@ -30,8 +46,12 @@ app.post('/api/check', (req, res) => {
 		redis.get(code).then(data => {
 			if (data === null) {
 				exec(`python ./python/classify_nsfw.py --model_def python/nsfw_model/deploy.prototxt --pretrained_model python/nsfw_model/resnet_50_1by2_nsfw.caffemodel ${req.body.url}`, (err, stdout, stderr) => {
-					let r = Number(stdout) > 0.5
+					let r = Number(stdout) > 0.6
 					redis.set(getCode(req.body.url), r ? 1 : 0)
+
+					if (r) {
+						redis.sadd('nsfw', code)
+					}
 
 					res.send(JSON.stringify({
 				    	status: 200,
