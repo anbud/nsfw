@@ -1,0 +1,1 @@
+!function(n){for(var t,e=["Width","Height"];t=e.pop();)!function(t,e){n.fn[t]=t in new Image?function(){return this[0][t]}:function(){var n,t,r=this[0];return"img"===r.tagName.toLowerCase()&&((n=new Image).src=r.src,t=n[e]),t}}("natural"+t,t.toLowerCase())}(jQuery);

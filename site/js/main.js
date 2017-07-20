@@ -12,7 +12,7 @@ var generate = function(target) {
 		str += chars.charAt(charIndex)
 	}
 
-	var url = 'http://i.imgur.com/' + str + 't.jpg'
+	var url = 'http://i.imgur.com/' + str + 'b.jpg'
 
 	$('#' + target).attr('src', url)
 }
@@ -31,11 +31,10 @@ var next = function() {
 			}
 		})
 	}
-
-	generate('prefetch')
 }
 
 $(document).ready(function() {
+	generate('prefetch')
 	next()
 	
 	$('#image').on('click', next)
@@ -51,10 +50,11 @@ $(document).ready(function() {
 			return
 		}
 
-		if (((obj.width() == 161) && (obj.height() == 81)) || ((obj.width() == 83) && (obj.height() == 22))) {
+		if (((obj.naturalWidth() == 161) && (obj.naturalHeight() == 81)) || ((obj.naturalWidth() == 83) && (obj.naturalHeight() == 22))) {
 			generate('prefetch')
 		} else {
 			var ur = obj.attr('src').slice(0, obj.attr('src').length - 5)
+
 			$.post('http://localhost:3000/api/check', {
 		    	url: ur + 'm.jpg'
 			}, function(data) {
