@@ -5,7 +5,7 @@ var prefCount = 5
 var prefetched = []
 
 var order = []
-var index = 0
+var index = -1
 
 var generate = function(target) {
 	var str = ''
