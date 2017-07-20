@@ -4,6 +4,9 @@ var prefCount = 5
 
 var prefetched = []
 
+var order = []
+var index = 0
+
 var generate = function(target) {
 	var str = ''
 
@@ -17,30 +20,80 @@ var generate = function(target) {
 	$('#' + target).attr('src', url)
 }
 
-var next = function() {
-	if (prefetched.length > 0) {
-		$('#image').attr('src', prefetched.pop())
-	} else {
-		$.post('http://localhost:3000/api/random', {
-			last: $('#image').attr('src')
-		}, function(data) {
-			var d = JSON.parse(data)
+var setImage = function(url) {
+	$('#image').attr('src', url)
+	order.push(url)
+	index++
+}
 
-			if (d.status === 200) {
-				$('#image').attr('src', d.data)
-			}
-		})
+var first = function() {
+	generate('prefetch')
+	
+	if (localStorage) {
+		var url = localStorage.getItem('last')
+
+		if (url) {
+			setImage(url)
+		} else {
+			next()
+		}
+	} else {
+		var cookie = document.cookie.match('(^|;) ?last=([^;]*)(;|$)')
+
+		if (cookie && cookie[2]) {
+			setImage(cookie[2])
+		} else {
+			next()
+		}
+	}
+}
+
+var next = function() {
+	if (index >= order.length - 1) {
+		if (prefetched.length > 0) {
+			setImage(prefetched.pop())
+		} else {
+			$.post('http://localhost:3000/api/random', {
+				last: $('#image').attr('src')
+			}, function(data) {
+				var d = JSON.parse(data)
+
+				if (d.status === 200) {
+					setImage(d.data)
+				}
+			})
+		}
+	} else {
+		$('#image').attr('src', order[++index])
+	}
+}
+
+var prev = function() {
+	if (order.length > 0 && index > 0) {
+		$('#image').attr('src', order[--index])
 	}
 }
 
 $(document).ready(function() {
-	generate('prefetch')
-	next()
+	first()
 	
-	$('#image').on('click', next)
+	$('#next').on('click', next)
+	$('#prev').on('click', prev)
 
 	$('#prefetch').on('error', function() {
 		generate('prefetch')
+	})
+
+	$('#image').on('load', function() {
+		try {
+			if (localStorage) {
+				localStorage.setItem('last', $('#image').attr('src'))
+			} else {
+				var expires = new Date()
+	            expires.setTime(expires.getTime() + (1 * 24 * 60 * 60 * 1000))
+	            document.cookie = 'last=' + $('#image').attr('src') + ';expires=' + expires.toUTCString()
+			}
+		} catch (e) {}
 	})
 
 	$('#prefetch').on('load', function() {
