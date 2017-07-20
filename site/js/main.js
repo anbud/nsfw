@@ -54,13 +54,14 @@ $(document).ready(function() {
 		if (((obj.width() == 161) && (obj.height() == 81)) || ((obj.width() == 83) && (obj.height() == 22))) {
 			generate('prefetch')
 		} else {
+			var ur = obj.attr('src').slice(0, obj.attr('src').length - 5)
 			$.post('http://localhost:3000/api/check', {
-		    	url: obj.attr('src').slice(0, obj.attr('src').length - 5) + 'm.jpg'
+		    	url: ur + 'm.jpg'
 			}, function(data) {
 				if (!JSON.parse(data).data) {
 					generate('prefetch')
 				} else {
-					prefetched.push(obj.attr('src').slice(0, obj.attr('src').length - 5) + '.jpg')
+					prefetched.push(ur + '.jpg')
 
 					if (prefetched.length < prefCount) {
 						generate('prefetch')

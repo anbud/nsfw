@@ -47,8 +47,10 @@ app.post('/api/check', (req, res) => {
 
 		redis.get(code).then(data => {
 			if (data === null) {
+				console.log(data)
 				exec(`python ./python/classify_nsfw.py --model_def python/nsfw_model/deploy.prototxt --pretrained_model python/nsfw_model/resnet_50_1by2_nsfw.caffemodel ${req.body.url}`, (err, stdout, stderr) => {
-					let r = Number(stdout) > 0.6
+					let r = Number(stdout) > 0.5
+					console.log(stdout)
 					redis.set(getCode(req.body.url), r ? 1 : 0)
 
 					if (r) {
