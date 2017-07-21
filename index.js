@@ -7,10 +7,6 @@ const Redis = require('ioredis')
 const app = express()
 const redis = new Redis()
 
-const getCode = url => {
-	return url.replace('http://i.imgur.com/', '').slice(0, -5)
-}
-
 app.listen(3000)
 
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -23,13 +19,13 @@ app.get('/', (req, res) => {
 })
 
 app.post('/api/random', (req, res) => {
-	redis.smembers('nsfw').then(data => {
+	redis.srandmember('nsfw', 2).then(data => {
 		if (data && data.length > 0) {
-			data = data.filter(i => i !== getCode(req.body.last))
+			data = data.filter(i => i !== req.body.last)
 
 			res.send(JSON.stringify({
 				status: 200,
-				data: `http://i.imgur.com/${data[parseInt(Math.random() * data.length)]}.jpg`
+				data: data[0]
 			}))
 		} else {
 			res.send(JSON.stringify({
@@ -41,18 +37,15 @@ app.post('/api/random', (req, res) => {
 })
 
 app.post('/api/check', (req, res) => {
-	if (req.body.url) {
-		req.body.url = req.body.url.replace('https', 'http')
-		let code = getCode(req.body.url)
-
-		redis.get(code).then(data => {
+	if (req.body.code) {
+		redis.get(req.body.code).then(data => {
 			if (data === null) {
-				exec(`python ./python/classify_nsfw.py --model_def python/nsfw_model/deploy.prototxt --pretrained_model python/nsfw_model/resnet_50_1by2_nsfw.caffemodel ${req.body.url}`, (err, stdout, stderr) => {
+				exec(`python ./python/classify_nsfw.py --model_def python/nsfw_model/deploy.prototxt --pretrained_model python/nsfw_model/resnet_50_1by2_nsfw.caffemodel http://i.imgur.com/${req.body.code}m.jpg`, (err, stdout, stderr) => {
 					let r = Number(stdout) > 0.5
-					redis.set(getCode(req.body.url), r ? 1 : 0)
+					redis.set(req.body.code, r ? 1 : 0)
 
 					if (r) {
-						redis.sadd('nsfw', code)
+						redis.sadd('nsfw', req.body.code)
 					}
 
 					res.send(JSON.stringify({
@@ -70,7 +63,7 @@ app.post('/api/check', (req, res) => {
 	} else {
 		res.send(JSON.stringify({
 			status: 400,
-			error: '[400] Missing URL parameter.'
+			error: '[400] Missing code parameter.'
 		}))
 	}
 })

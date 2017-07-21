@@ -1,3 +1,5 @@
+var apiUrl = 'http://localhost:3000'
+
 var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 var len = 5
 var prefCount = 5
@@ -6,6 +8,10 @@ var prefetched = []
 
 var order = []
 var index = -1
+
+var getCode = function(url, fullSize) {
+	return url.replace('https', 'http').replace('http://i.imgur.com/', '').slice(0, fullSize ? -4 : -5)
+}
 
 var generate = function(target) {
 	var str = ''
@@ -20,31 +26,63 @@ var generate = function(target) {
 	$('#' + target).attr('src', url)
 }
 
-var setImage = function(url) {
-	$('#image').attr('src', url)
-	order.push(url)
-	index++
+var persistData = function(key, value) {
+	try {
+		if (localStorage) {
+			localStorage.setItem(key, value)
+		} else {
+			var expires = new Date()
+
+	        expires.setTime(expires.getTime() + (7 * 24 * 60 * 60 * 1000))
+	        document.cookie = key + '=' + value + ';expires=' + expires.toUTCString()
+		}
+	} catch (e) {}
 }
 
-var first = function() {
-	generate('prefetch')
-	
+var loadData = function(key) {
 	if (localStorage) {
-		var url = localStorage.getItem('last')
+		var url = localStorage.getItem(key)
 
 		if (url) {
-			setImage(url)
+			return url
+		}
+	} else {
+		var cookie = document.cookie.match('(^|;) ?' + key + '=([^;]*)(;|$)')
+
+		if (cookie && cookie[2]) {
+			return cookie[2]
+		}
+	}
+}
+
+var setImage = function(code, move) {
+	$('#image').attr('src', 'http://i.imgur.com/' + code + '.jpg')
+	
+	if (!move) {
+		order.push(code)
+		index++
+	}
+}
+
+var showDialog = function() {
+	persistData('over18', 'true')
+
+	init()
+}
+
+var init = function() {
+	if (!!loadData('over18')) {
+		generate('prefetch')
+		
+		var code = loadData('last')
+
+		if (code) {
+			setImage(code)
 		} else {
 			next()
 		}
 	} else {
-		var cookie = document.cookie.match('(^|;) ?last=([^;]*)(;|$)')
-
-		if (cookie && cookie[2]) {
-			setImage(cookie[2])
-		} else {
-			next()
-		}
+		showDialog()
 	}
 }
 
@@ -53,8 +91,8 @@ var next = function() {
 		if (prefetched.length > 0) {
 			setImage(prefetched.pop())
 		} else {
-			$.post('http://localhost:3000/api/random', {
-				last: $('#image').attr('src')
+			$.post(apiUrl + '/api/random', {
+				last: getCode($('#image').attr('src'), true)
 			}, function(data) {
 				var d = JSON.parse(data)
 
@@ -64,18 +102,18 @@ var next = function() {
 			})
 		}
 	} else {
-		$('#image').attr('src', order[++index])
+		setImage(order[++index], true)
 	}
 }
 
 var prev = function() {
 	if (order.length > 0 && index > 0) {
-		$('#image').attr('src', order[--index])
+		setImage(order[--index], true)
 	}
 }
 
 $(document).ready(function() {
-	first()
+	init()
 	
 	$('#next').on('click', next)
 	$('#prev').on('click', prev)
@@ -85,15 +123,7 @@ $(document).ready(function() {
 	})
 
 	$('#image').on('load', function() {
-		try {
-			if (localStorage) {
-				localStorage.setItem('last', $('#image').attr('src'))
-			} else {
-				var expires = new Date()
-	            expires.setTime(expires.getTime() + (1 * 24 * 60 * 60 * 1000))
-	            document.cookie = 'last=' + $('#image').attr('src') + ';expires=' + expires.toUTCString()
-			}
-		} catch (e) {}
+		persistData('last', getCode($('#image').attr('src'), true))
 	})
 
 	$('#prefetch').on('load', function() {
@@ -106,15 +136,15 @@ $(document).ready(function() {
 		if (((obj.naturalWidth() == 161) && (obj.naturalHeight() == 81)) || ((obj.naturalWidth() == 83) && (obj.naturalHeight() == 22))) {
 			generate('prefetch')
 		} else {
-			var ur = obj.attr('src').slice(0, obj.attr('src').length - 5)
+			var code = getCode(obj.attr('src'))
 
-			$.post('http://localhost:3000/api/check', {
-		    	url: ur + 'm.jpg'
+			$.post(apiUrl + '/api/check', {
+		    	code: code
 			}, function(data) {
 				if (!JSON.parse(data).data) {
 					generate('prefetch')
 				} else {
-					prefetched.push(ur + '.jpg')
+					prefetched.push(code)
 
 					if (prefetched.length < prefCount) {
 						generate('prefetch')
