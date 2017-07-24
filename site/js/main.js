@@ -10,6 +10,8 @@ var prefetchedApi = []
 var order = []
 var index = -1
 
+var generationActive = false
+
 var getCode = function(url, fullSize) {
 	return url.replace('https', 'http').replace('http://i.imgur.com/', '').slice(0, fullSize ? -4 : -5)
 }
@@ -31,6 +33,8 @@ var prefetch = function() {
 }
 
 var generate = function(target) {
+	generationActive = true
+
 	var str = ''
 
 	for (var i = 0; i < len; i++) {
@@ -83,6 +87,12 @@ var setImage = function(code, move) {
 		order.push(code)
 		index++
 	}
+
+	if (index <= 0) {
+		$('.prev').hide()
+	} else {
+		$('.prev').show()
+	}
 }
 
 var showDialog = function() {
@@ -111,15 +121,15 @@ var init = function() {
 var next = function() {
 	if (index >= order.length - 1) {
 		if (prefetched.length > 0) {
-			setImage(prefetched.pop())
+			setImage(prefetched.shift())
 
-			if (!prefetched.length) {
+			if (prefetched.length < 5 && !generationActive) {
 				generate('prefetch')
 			}
 		} else if (prefetchedApi.length > 0) {
-			setImage(prefetchedApi.pop())
+			setImage(prefetchedApi.shift())
 
-			if (prefetchedApi.length < 2) {
+			if (prefetchedApi.length < 5) {
 				prefetch()
 			}		
 		} else {
@@ -180,6 +190,8 @@ $(document).ready(function() {
 
 					if (prefetched.length < prefCount) {
 						generate('prefetch')
+					} else {
+						generationActive = false
 					}
 				}
 			})
