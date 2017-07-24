@@ -186,3 +186,11 @@ $(document).ready(function() {
 		}
 	})
 })
+
+$(document).keydown(function(event) {
+	if(event.which === 37) {
+		prev()
+	} else if(event.which === 39) {
+		next()
+	}
+})

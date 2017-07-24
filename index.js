@@ -14,6 +14,8 @@ app.use(bodyParser.json())
 
 app.use(cors())
 
+app.use(express.static('site'))
+
 app.get('/', (req, res) => {
 	res.send('NSFW.rs API Endpoints')
 })
