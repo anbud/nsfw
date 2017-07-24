@@ -5,12 +5,29 @@ var len = 5
 var prefCount = 5
 
 var prefetched = []
+var prefetchedApi = []
 
 var order = []
 var index = -1
 
 var getCode = function(url, fullSize) {
 	return url.replace('https', 'http').replace('http://i.imgur.com/', '').slice(0, fullSize ? -4 : -5)
+}
+
+var prefetch = function() {
+	$.post(apiUrl + '/api/random', {
+		last: prefetchedApi[prefetchedApi.length - 1]
+	}, function(data) {
+		var d = JSON.parse(data)
+
+		if (d.status === 200) {
+			prefetchedApi.push(d.data)
+		}
+
+		if (prefetchedApi.length < prefCount) {
+			prefetch()
+		}
+	})
 }
 
 var generate = function(target) {
@@ -56,7 +73,11 @@ var loadData = function(key) {
 }
 
 var setImage = function(code, move) {
-	$('#image').attr('src', 'http://i.imgur.com/' + code + '.jpg')
+	$('#image').attr('src', '')
+	$('#image').fadeOut(100, function() {
+		$('#image').attr('src', 'http://i.imgur.com/' + code + '.jpg')
+		$('#image').fadeIn(500)
+	})
 	
 	if (!move) {
 		order.push(code)
@@ -73,6 +94,7 @@ var showDialog = function() {
 var init = function() {
 	if (!!loadData('over18')) {
 		generate('prefetch')
+		prefetch()
 		
 		var code = loadData('last')
 
@@ -90,6 +112,16 @@ var next = function() {
 	if (index >= order.length - 1) {
 		if (prefetched.length > 0) {
 			setImage(prefetched.pop())
+
+			if (!prefetched.length) {
+				generate('prefetch')
+			}
+		} else if (prefetchedApi.length > 0) {
+			setImage(prefetchedApi.pop())
+
+			if (prefetchedApi.length < 2) {
+				prefetch()
+			}		
 		} else {
 			$.post(apiUrl + '/api/random', {
 				last: getCode($('#image').attr('src'), true)
@@ -115,8 +147,8 @@ var prev = function() {
 $(document).ready(function() {
 	init()
 	
-	$('#next').on('click', next)
-	$('#prev').on('click', prev)
+	$('.next').on('click', next)
+	$('.prev').on('click', prev)
 
 	$('#prefetch').on('error', function() {
 		generate('prefetch')
