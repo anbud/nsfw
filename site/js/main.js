@@ -23,7 +23,9 @@ var prefetch = function() {
 		var d = JSON.parse(data)
 
 		if (d.status === 200) {
-			prefetchedApi.push(d.data)
+			if (!~order.indexOf(d.data) || Math.random() > 0.4) {
+				prefetchedApi.push(d.data)
+			}
 		}
 
 		if (prefetchedApi.length < prefCount) {
