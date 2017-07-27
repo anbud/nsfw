@@ -3,6 +3,8 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 const exec = require('child_process').exec
 const Redis = require('ioredis')
+const minify = require('express-minify')
+const compression = require('compression')
 
 const app = express()
 const redis = new Redis()
@@ -14,6 +16,8 @@ app.use(bodyParser.json())
 
 app.use(cors())
 
+app.use(compression())
+app.use(minify())
 app.use(express.static('site'))
 
 app.get('/', (req, res) => {

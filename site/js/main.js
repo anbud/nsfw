@@ -2,7 +2,7 @@ var apiUrl = 'http://localhost:3000'
 
 var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 var len = 5
-var prefCount = 5
+var prefCount = 10
 
 var prefetched = []
 var prefetchedApi = []
