@@ -1,30 +1,42 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-    <link rel="stylesheet" type="text/css" href="/css/main.css">
+	<head>
+    	<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+    	<link rel="stylesheet" type="text/css" href="/css/main.css">
 
-    <title>NSFW.rs | Random NSFW images</title>
-  </head>
-  <body>
-  	<div class="footer">
-  		<img id="logo" src="/css/logo.png" />
-  		<div class="menu">
-  			<a href="#" id="report">report</a>
-  			<a href="#" id="Share">share</a>
-  			<a href="#" id="about">about</a>
-  		</div>
-  	</div>
-  	<div class="container">
-    	<img src="" id="image" />
-	</div>
-    <a href='#' class='nav prev'>prev</a>
-    <a href='#' class='nav next'>next</a>
+    	<title>NSFW.rs | Random NSFW images</title>
+  	</head>
+  	<body>
+	  	<div class="container">
+	    	<img src="" id="image" />
 
-    <img src="" id="prefetch" width="160" height="160" />
+	    	<div class="nav">
+		    	<a href='#' class='arrow prev'>prev</a>
+			    <a href='#' class='arrow next'>next</a>
+			</div>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script type="text/javascript" src="/js/natural.js"></script> 
-    <script type="text/javascript" src="/js/main.js"></script> 
-</body>
+			<img src="" id="prefetch" width="160" height="160" />
+		</div>
+
+	    <div class="footer">
+	  		<a href="https://nsfw.rs/">
+	  			<img id="logo" src="/css/logo.png" />
+	  		</a>
+	  		<div class="menu">
+	  			<a href="#" id="report">
+	  				<span class="accent">r</span>eport
+	  			</a>
+	  			<a href="#" id="share">
+	  				<span class="accent">s</span>hare
+	  			</a>
+	  			<a href="#" id="about">
+	  				<span class="accent">a</span>bout
+	  			</a>
+	  		</div>
+	  	</div>
+
+	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	    <script type="text/javascript" src="/js/natural.js"></script> 
+	    <script type="text/javascript" src="/js/main.js"></script> 
+	</body>
 </html>
