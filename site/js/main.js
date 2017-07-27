@@ -125,13 +125,13 @@ var next = function() {
 		if (prefetched.length > 0) {
 			setImage(prefetched.shift())
 
-			if (prefetched.length < 5 && !generationActive) {
+			if (prefetched.length < prefCount && !generationActive) {
 				generate('prefetch')
 			}
 		} else if (prefetchedApi.length > 0) {
 			setImage(prefetchedApi.shift())
 
-			if (prefetchedApi.length < 5) {
+			if (prefetchedApi.length < prefCount) {
 				prefetch()
 			}		
 		} else {
