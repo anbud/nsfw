@@ -1,4 +1,96 @@
-var apiUrl = 'http://localhost:3000'
+/* natural.js */
+!function(n){for(var t,e=["Width","Height"];t=e.pop();)!function(t,e){n.fn[t]=t in new Image?function(){return this[0][t]}:function(){var n,t,r=this[0];return"img"===r.tagName.toLowerCase()&&((n=new Image).src=r.src,t=n[e]),t}}("natural"+t,t.toLowerCase())}(jQuery);
+
+/* swipe.js */
+/**
+ * jquery.detectSwipe v2.1.3
+ * jQuery Plugin to obtain touch gestures from iPhone, iPod Touch, iPad and Android
+ * http://github.com/marcandre/detect_swipe
+ * Based on touchwipe by Andreas Waltl, netCU Internetagentur (http://www.netcu.de)
+ */
+
+(function (factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(['jquery'], factory);
+    } else if (typeof exports === 'object') {
+        // Node/CommonJS
+        module.exports = factory(require('jquery'));
+    } else {
+        // Browser globals
+        factory(jQuery);
+    }
+}(function($) {
+
+  $.detectSwipe = {
+    version: '2.1.2',
+    enabled: 'ontouchstart' in document.documentElement,
+    preventDefault: true,
+    threshold: 20
+  };
+
+  var startX,
+    startY,
+    isMoving = false;
+
+  function onTouchEnd() {
+    this.removeEventListener('touchmove', onTouchMove);
+    this.removeEventListener('touchend', onTouchEnd);
+    isMoving = false;
+  }
+
+  function onTouchMove(e) {
+    if ($.detectSwipe.preventDefault) { e.preventDefault(); }
+    if(isMoving) {
+      var x = e.touches[0].pageX;
+      var y = e.touches[0].pageY;
+      var dx = startX - x;
+      var dy = startY - y;
+      var dir;
+      var ratio = window.devicePixelRatio || 1;
+      if(Math.abs(dx) * ratio >= $.detectSwipe.threshold) {
+        dir = dx > 0 ? 'left' : 'right'
+      }
+      else if(Math.abs(dy) * ratio >= $.detectSwipe.threshold) {
+        dir = dy > 0 ? 'up' : 'down'
+      }
+      if(dir) {
+        onTouchEnd.call(this);
+        $(this).trigger('swipe', dir).trigger('swipe' + dir);
+      }
+    }
+  }
+
+  function onTouchStart(e) {
+    if (e.touches.length == 1) {
+      startX = e.touches[0].pageX;
+      startY = e.touches[0].pageY;
+      isMoving = true;
+      this.addEventListener('touchmove', onTouchMove, false);
+      this.addEventListener('touchend', onTouchEnd, false);
+    }
+  }
+
+  function setup() {
+    this.addEventListener && this.addEventListener('touchstart', onTouchStart, false);
+  }
+
+  function teardown() {
+    this.removeEventListener('touchstart', onTouchStart);
+  }
+
+  $.event.special.swipe = { setup: setup };
+
+  $.each(['left', 'up', 'down', 'right'], function () {
+    $.event.special['swipe' + this] = { setup: function(){
+      $(this).on('swipe', $.noop);
+    } };
+  });
+}));
+
+/* main.js */
+
+var apiUrl = 'https://nsfw.ngrok.io'
 
 var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 var len = 5
@@ -44,7 +136,7 @@ var generate = function(target) {
 		str += chars.charAt(charIndex)
 	}
 
-	var url = 'http://i.imgur.com/' + str + 'b.jpg'
+	var url = 'https://i.imgur.com/' + str + 'b.jpg'
 
 	$('#' + target).attr('src', url)
 }
@@ -81,7 +173,7 @@ var loadData = function(key) {
 var setImage = function(code, move) {
 	$('#image').attr('src', '')
 	$('#image').fadeOut(100, function() {
-		$('#image').attr('src', 'http://i.imgur.com/' + code + '.jpg')
+		$('#image').attr('src', 'https://i.imgur.com/' + code + '.jpg')
 		$('#image').fadeIn(500)
 	})
 	
@@ -159,8 +251,17 @@ var prev = function() {
 $(document).ready(function() {
 	init()
 	
-	$('.next').on('click', next)
-	$('.prev').on('click', prev)
+	$('.next').on('click', function(event) {
+		event.preventDefault()
+
+		next()
+	})
+
+	$('.prev').on('click', function(event) {
+		event.preventDefault()
+
+		prev()
+	})
 
 	$('#prefetch').on('error', function() {
 		generate('prefetch')
@@ -207,4 +308,16 @@ $(document).keydown(function(event) {
 	} else if(event.which === 39) {
 		next()
 	}
+})
+
+$(document).on('swipeleft', function(event) {
+	event.preventDefault()
+
+	next()
+})
+
+$(document).on('swiperight', function(event) {
+	event.preventDefault()
+
+	prev()
 })

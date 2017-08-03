@@ -60,6 +60,10 @@ body {
   right: 0;
 }
 
+.container .arrow.prev {
+  display: none;
+}
+
 .container .arrow:focus {
   outline: none;
 }
@@ -108,6 +112,7 @@ body {
   margin-right: 10px;
   font-size: 14pt;
   text-decoration: none;
+  color: #cacaca;
 }
 
 .footer .menu a:hover {
