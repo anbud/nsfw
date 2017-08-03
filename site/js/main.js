@@ -25,7 +25,7 @@
   $.detectSwipe = {
     version: '2.1.2',
     enabled: 'ontouchstart' in document.documentElement,
-    preventDefault: true,
+    preventDefault: false,
     threshold: 20
   };
 
@@ -90,7 +90,7 @@
 
 /* main.js */
 
-var apiUrl = 'https://nsfw.ngrok.io'
+var apiUrl = 'https://localhost:3000' // 'https://nsfw.ngrok.io'
 
 var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 var len = 5
