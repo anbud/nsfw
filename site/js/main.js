@@ -90,7 +90,7 @@
 
 /* main.js */
 
-var apiUrl = 'https://localhost:3000' // 'https://nsfw.ngrok.io'
+var apiUrl = 'http://localhost:3000' // 'https://nsfw.ngrok.io'
 
 var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 var len = 5
@@ -190,7 +190,8 @@ var setImage = function(code, move) {
 }
 
 var showDialog = function() {
-	persistData('over18', 'true')
+	showOverlay('over18')
+	// persistData('over18', 'true')
 
 	init()
 }
@@ -206,6 +207,14 @@ var init = function() {
 			setImage(code)
 		} else {
 			next()
+		}
+
+		if (window.location.hash) {
+			if (window.location.hash === '#tos') {
+				showOverlay('tos')
+			} else if (window.location.hash === '#about') {
+				showOverlay('about')
+			}
 		}
 	} else {
 		showDialog()
@@ -248,6 +257,22 @@ var prev = function() {
 	}
 }
 
+var showOverlay = function(name) {
+	$('.container').hide()
+	$('.overlay').fadeIn(300)
+	$('.footer .menu').animate({
+		'margin-right': '10px'
+	})
+}
+
+var hideOverlay = function() {
+	$('.overlay').fadeOut(300)
+	$('.container').show()
+	$('.footer .menu').animate({
+		'margin-right': '200px'
+	})
+}
+
 $(document).ready(function() {
 	init()
 	
@@ -261,6 +286,12 @@ $(document).ready(function() {
 		event.preventDefault()
 
 		prev()
+	})
+
+	$('.x').on('click', function(event) {
+		event.preventDefault()
+
+		hideOverlay()
 	})
 
 	$('#prefetch').on('error', function() {

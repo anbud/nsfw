@@ -27,6 +27,34 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+a {
+  text-decoration: none;
+  color: #cacaca;
+}
+
+a:visited {
+  text-decoration: none;
+  color: #cacaca;
+}
+
+a:hover {
+  color: #f7484e;
+  text-decoration: none;
+}
+
+.overlay {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.overlay .x {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
 .container {
   height: 100%;
   display: flex;
@@ -40,23 +68,18 @@ body {
   -webkit-tap-highlight-color: rgba(0,0,0,0);
   top: 50%;
   left: 0;
-  opacity: 0.7;
-  text-indent: -9999px;
   overflow: hidden;
   text-decoration: none;
-  height: 61px;
-  width: 38px;
-  background: transparent url("arrows.gif") no-repeat left top;
-  margin-top: -45px;
-}
-
-.container .arrow:active {
-  opacity: 1.0;
+  height: 40px;
+  width: 40px;
+  margin-top: -40px;
+  font-size: 26pt;
+  text-align: center;
+  transform: scale(0.5,1.0);
 }
 
 .container .arrow.next {
   left: auto;
-  background-position: right top;
   right: 0;
 }
 
@@ -103,16 +126,9 @@ body {
   margin-right: 200px;
 }
 
-.footer .menu a:visited {
-  color: #cacaca;
-  text-decoration: none;
-}
-
 .footer .menu a {
   margin-right: 10px;
   font-size: 14pt;
-  text-decoration: none;
-  color: #cacaca;
 }
 
 .footer .menu a:hover {
