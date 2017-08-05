@@ -189,13 +189,6 @@ var setImage = function(code, move) {
 	}
 }
 
-var showDialog = function() {
-	showOverlay('over18')
-	// persistData('over18', 'true')
-
-	init()
-}
-
 var init = function() {
 	if (!!loadData('over18')) {
 		generate('prefetch')
@@ -258,6 +251,7 @@ var prev = function() {
 }
 
 var showOverlay = function(name) {
+	$('#' + name).show()
 	$('.container').hide()
 	$('.overlay').fadeIn(300)
 	$('.footer .menu').animate({
@@ -265,11 +259,30 @@ var showOverlay = function(name) {
 	})
 }
 
-var hideOverlay = function() {
+var hideOverlay = function(name) {
+	$('#' + name).hide()
 	$('.overlay').fadeOut(300)
 	$('.container').show()
 	$('.footer .menu').animate({
 		'margin-right': '200px'
+	})
+}
+
+var showDialog = function() {
+	showOverlay('over18')
+
+	$('#over18-yes').on('click', function() {
+		persistData('over18', 'true')
+
+		hideOverlay('over18')
+
+		init()
+	})
+
+	$('#over18-no').on('click', function() {
+		persistData('over18', 'false')
+
+		window.location = 'https://google.rs/'
 	})
 }
 

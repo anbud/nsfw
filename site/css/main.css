@@ -55,6 +55,32 @@ a:hover {
   top: 10px;
 }
 
+.overlay #over18 h1 {
+  font-weight: 300;
+  font-size: 50pt;
+  width: 100%;
+  text-align: center;
+}
+
+.overlay #over18 h2 {
+  font-weight: 300;
+  font-size: 20pt;
+  width: 100%;
+  text-align: center;
+}
+
+.overlay #over18 .buttons {
+  width: 100%;
+  text-align: center;
+  margin-top: 10%;
+}
+
+.overlay #over18 .buttons a {
+  padding: 15px;
+  border: 1px solid #f7484e;
+  margin-left: 10px;
+}
+
 .container {
   height: 100%;
   display: flex;
