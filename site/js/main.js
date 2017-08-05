@@ -90,7 +90,7 @@
 
 /* main.js */
 
-var apiUrl = 'http://localhost:3000' // 'https://nsfw.ngrok.io'
+var apiUrl = 'https://nsfw.ngrok.io' // 'http://localhost:3000' // 'https://nsfw.ngrok.io'
 
 var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 var len = 5
@@ -103,6 +103,8 @@ var order = []
 var index = -1
 
 var generationActive = false
+
+var currentOverlay = ''
 
 var getCode = function(url, fullSize) {
 	return url.replace('https', 'http').replace('http://i.imgur.com/', '').slice(0, fullSize ? -4 : -5)
@@ -207,6 +209,8 @@ var init = function() {
 				showOverlay('tos')
 			} else if (window.location.hash === '#about') {
 				showOverlay('about')
+			} else if (window.location.hash === '#privacy') {
+				showOverlay('privacy')
 			}
 		}
 	} else {
@@ -251,21 +255,31 @@ var prev = function() {
 }
 
 var showOverlay = function(name) {
-	$('#' + name).show()
-	$('.container').hide()
-	$('.overlay').fadeIn(300)
-	$('.footer .menu').animate({
-		'margin-right': '10px'
-	})
+	if (!currentOverlay) {
+		currentOverlay = name
+
+		$('#' + name).show()
+		$('.container').hide()
+		$('.overlay').fadeIn(300)
+		$('.footer .menu').animate({
+			'margin-right': '10px'
+		})
+	}
 }
 
-var hideOverlay = function(name) {
-	$('#' + name).hide()
-	$('.overlay').fadeOut(300)
-	$('.container').show()
-	$('.footer .menu').animate({
-		'margin-right': '200px'
-	})
+var hideOverlay = function() {
+	if (currentOverlay) {
+		$('#' + currentOverlay).hide()
+		$('.overlay').fadeOut(300)
+		$('.container').show()
+		$('.footer .menu').animate({
+			'margin-right': '200px'
+		})
+
+		window.location.hash = ''
+
+		currentOverlay = ''
+	}
 }
 
 var showDialog = function() {
@@ -274,7 +288,7 @@ var showDialog = function() {
 	$('#over18-yes').on('click', function() {
 		persistData('over18', 'true')
 
-		hideOverlay('over18')
+		hideOverlay()
 
 		init()
 	})
@@ -305,6 +319,39 @@ $(document).ready(function() {
 		event.preventDefault()
 
 		hideOverlay()
+	})
+
+	$('#btn-about').on('click', function(event) {
+		event.preventDefault()
+
+		showOverlay('about')
+		window.location.hash = '#about'
+	})
+
+	$('#btn-tos').on('click', function(event) {
+		event.preventDefault()
+
+		showOverlay('tos')
+		window.location.hash = '#tos'
+	})
+
+	$('#btn-privacy').on('click', function(event) {
+		event.preventDefault()
+
+		showOverlay('privacy')
+		window.location.hash = '#privacy'
+	})
+
+	$('#btn-report').on('click', function(event) {
+		event.preventDefault()
+
+		showOverlay('report')
+	})
+
+	$('#btn-share').on('click', function(event) {
+		event.preventDefault()
+
+		showOverlay('share')
 	})
 
 	$('#prefetch').on('error', function() {
