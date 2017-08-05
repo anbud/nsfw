@@ -90,7 +90,7 @@
 
 /* main.js */
 
-var apiUrl = 'https://nsfw.ngrok.io' // 'http://localhost:3000' // 'https://nsfw.ngrok.io'
+var apiUrl = 'http://localhost:3000' // 'https://nsfw.ngrok.io'
 
 var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 var len = 5
@@ -398,7 +398,24 @@ $(document).keydown(function(event) {
 		prev()
 	} else if(event.which === 39) {
 		next()
-	}
+	} else if (event.keyCode === 27) {
+		hideOverlay()
+	} else if (event.ctrlKey || event.metaKey) {
+        switch (String.fromCharCode(event.which).toLowerCase()) {
+        case 'a':
+            event.preventDefault()
+            showOverlay('about')
+            break
+        case 'r':
+            event.preventDefault()
+            showOverlay('report')
+            break
+        case 's':
+            event.preventDefault()
+            showOverlay('share')
+            break
+        }
+    }
 })
 
 $(document).on('swipeleft', function(event) {
