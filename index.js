@@ -9,7 +9,7 @@ const compression = require('compression')
 const app = express()
 const redis = new Redis()
 
-app.listen(3000)
+app.listen(3200)
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
@@ -42,30 +42,14 @@ app.post('/api/random', (req, res) => {
 	})
 })
 
-app.post('/api/check', (req, res) => {
+app.post('/api/save', (req, res) => {
 	if (req.body.code) {
-		redis.get(req.body.code).then(data => {
-			if (data === null) {
-				exec(`python ./python/classify_nsfw.py --model_def python/nsfw_model/deploy.prototxt --pretrained_model python/nsfw_model/resnet_50_1by2_nsfw.caffemodel http://i.imgur.com/${req.body.code}m.jpg`, (err, stdout, stderr) => {
-					let r = Number(stdout) > 0.5
-					redis.set(req.body.code, r ? 1 : 0)
+		redis.sadd('nsfw', req.body.code)
 
-					if (r) {
-						redis.sadd('nsfw', req.body.code)
-					}
-
-					res.send(JSON.stringify({
-				    	status: 200,
-				   		data: r
-				    }))
-				})
-			} else {
-				res.send(JSON.stringify({
-				    status: 200,
-				   	data: data === 1
-				}))
-			}
-		})
+		res.send(JSON.stringify({
+			status: 200,
+			data: true
+	    }))
 	} else {
 		res.send(JSON.stringify({
 			status: 400,

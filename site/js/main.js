@@ -90,35 +90,37 @@
 
 /* main.js */
 
-var apiUrl = 'http://localhost:3000' // 'https://nsfw.ngrok.io'
+const apiUrl = 'http://localhost:3200' // 'https://nsfw.ngrok.io'
 
-var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-var len = 5
-var prefCount = 10
+const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+const len = 5
+const prefCount = 10
 
-var prefetched = []
-var prefetchedApi = []
+let prefetched = []
+let prefetchedApi = []
 
-var order = []
-var index = -1
+let order = []
+let index = -1
 
-var generationActive = false
+let generationActive = false
+let currentOverlay = ''
 
-var currentOverlay = ''
+let model
+let modelLoaded = false
 
-var getCode = function(url, fullSize) {
+const getCode = (url, fullSize) => {
 	return url.replace('https', 'http').replace('http://i.imgur.com/', '').slice(0, fullSize ? -4 : -5)
 }
 
-var prefetch = function() {
-	$.post(apiUrl + '/api/random', {
+const prefetch = () => {
+	$.post(`${apiUrl}/api/random`, {
 		last: prefetchedApi[prefetchedApi.length - 1]
-	}, function(data) {
-		var d = JSON.parse(data)
+	}, data => {
+		data = JSON.parse(data)
 
-		if (d.status === 200) {
-			if (!~order.indexOf(d.data) || Math.random() > 0.4) {
-				prefetchedApi.push(d.data)
+		if (data.status === 200) {
+			if (!~order.indexOf(data.data) || Math.random() > 0.4) {
+				prefetchedApi.push(data.data)
 			}
 		}
 
@@ -128,43 +130,46 @@ var prefetch = function() {
 	})
 }
 
-var generate = function(target) {
-	generationActive = true
-
-	var str = ''
-
-	for (var i = 0; i < len; i++) {
-		var charIndex = Math.round(Math.random() * chars.length)
-		str += chars.charAt(charIndex)
+const generate = target => {
+	if (!modelLoaded) {
+		return
 	}
 
-	var url = 'https://i.imgur.com/' + str + 'b.jpg'
+	generationActive = true
 
-	$('#' + target).attr('src', url)
+	let str = ''
+
+	for (let i = 0; i < len; i++) {
+		str += chars.charAt(Math.round(Math.random() * chars.length))
+	}
+
+	let url = `https://i.imgur.com/${str}b.jpg`
+
+	$(`#${target}`).attr('src', url)
 }
 
-var persistData = function(key, value) {
+const persistData = (key, value) => {
 	try {
 		if (localStorage) {
 			localStorage.setItem(key, value)
 		} else {
-			var expires = new Date()
+			let expires = new Date()
 
 	        expires.setTime(expires.getTime() + (7 * 24 * 60 * 60 * 1000))
-	        document.cookie = key + '=' + value + ';expires=' + expires.toUTCString()
+	        document.cookie = `${key}=${value};expires=${expires.toUTCString()}`
 		}
 	} catch (e) {}
 }
 
-var loadData = function(key) {
+const loadData = key => {
 	if (localStorage) {
-		var url = localStorage.getItem(key)
+		let url = localStorage.getItem(key)
 
 		if (url) {
 			return url
 		}
 	} else {
-		var cookie = document.cookie.match('(^|;) ?' + key + '=([^;]*)(;|$)')
+		let cookie = document.cookie.match('(^|;) ?' + key + '=([^;]*)(;|$)')
 
 		if (cookie && cookie[2]) {
 			return cookie[2]
@@ -172,10 +177,11 @@ var loadData = function(key) {
 	}
 }
 
-var setImage = function(code, move) {
+const setImage = (code, move) => {
 	$('#image').attr('src', '')
-	$('#image').fadeOut(100, function() {
-		$('#image').attr('src', 'https://i.imgur.com/' + code + '.jpg')
+
+	$('#image').fadeOut(100, () => {
+		$('#image').attr('src', `https://i.imgur.com/${code}.jpg`)
 		$('#image').fadeIn(500)
 	})
 	
@@ -191,12 +197,22 @@ var setImage = function(code, move) {
 	}
 }
 
-var init = function() {
-	if (!!loadData('over18')) {
+const loadModel = () => {
+	nsfwjs.load('/model/').then(m => {
+		model = m
+
+		modelLoaded = true
 		generate('prefetch')
+	})
+}
+
+const init = () => {
+	loadModel()
+
+	if (!!loadData('over18')) {
 		prefetch()
 		
-		var code = loadData('last')
+		let code = loadData('last')
 
 		if (code) {
 			setImage(code)
@@ -218,7 +234,7 @@ var init = function() {
 	}
 }
 
-var next = function() {
+const next = () => {
 	if (index >= order.length - 1) {
 		if (prefetched.length > 0) {
 			setImage(prefetched.shift())
@@ -233,12 +249,12 @@ var next = function() {
 				prefetch()
 			}		
 		} else {
-			$.post(apiUrl + '/api/random', {
+			$.post(`${apiUrl}/api/random`, {
 				last: getCode($('#image').attr('src'), true)
-			}, function(data) {
-				var d = JSON.parse(data)
+			}, data => {
+				data = JSON.parse(data)
 
-				if (d.status === 200) {
+				if (data.status === 200) {
 					setImage(d.data)
 				}
 			})
@@ -248,17 +264,17 @@ var next = function() {
 	}
 }
 
-var prev = function() {
+const prev = () => {
 	if (order.length > 0 && index > 0) {
 		setImage(order[--index], true)
 	}
 }
 
-var showOverlay = function(name) {
+const showOverlay = name => {
 	if (!currentOverlay) {
 		currentOverlay = name
 
-		$('#' + name).show()
+		$(`#${name}`).show()
 		$('.container').hide()
 		$('.overlay').fadeIn(300)
 		$('.footer .menu').animate({
@@ -267,9 +283,9 @@ var showOverlay = function(name) {
 	}
 }
 
-var hideOverlay = function() {
+const hideOverlay = () => {
 	if (currentOverlay) {
-		$('#' + currentOverlay).hide()
+		$(`#${currentOverlay}`).hide()
 		$('.overlay').fadeOut(300)
 		$('.container').show()
 		$('.footer .menu').animate({
@@ -282,10 +298,10 @@ var hideOverlay = function() {
 	}
 }
 
-var showDialog = function() {
+const showDialog = () => {
 	showOverlay('over18')
 
-	$('#over18-yes').on('click', function() {
+	$('#over18-yes').on('click', () => {
 		persistData('over18', 'true')
 
 		hideOverlay()
@@ -293,77 +309,77 @@ var showDialog = function() {
 		init()
 	})
 
-	$('#over18-no').on('click', function() {
+	$('#over18-no').on('click', () => {
 		persistData('over18', 'false')
 
 		window.location = 'https://google.rs/'
 	})
 }
 
-$(document).ready(function() {
+$(document).ready(() => {
 	init()
 	
-	$('.next').on('click', function(event) {
+	$('.next').on('click', event => {
 		event.preventDefault()
 
 		next()
 	})
 
-	$('.prev').on('click', function(event) {
+	$('.prev').on('click', event => {
 		event.preventDefault()
 
 		prev()
 	})
 
-	$('.x').on('click', function(event) {
+	$('.x').on('click', event => {
 		event.preventDefault()
 
 		hideOverlay()
 	})
 
-	$('#btn-about').on('click', function(event) {
+	$('#btn-about').on('click', event => {
 		event.preventDefault()
 
 		showOverlay('about')
 		window.location.hash = '#about'
 	})
 
-	$('#btn-tos').on('click', function(event) {
+	$('#btn-tos').on('click', event => {
 		event.preventDefault()
 
 		showOverlay('tos')
 		window.location.hash = '#tos'
 	})
 
-	$('#btn-privacy').on('click', function(event) {
+	$('#btn-privacy').on('click', event => {
 		event.preventDefault()
 
 		showOverlay('privacy')
 		window.location.hash = '#privacy'
 	})
 
-	$('#btn-report').on('click', function(event) {
+	$('#btn-report').on('click', event => {
 		event.preventDefault()
 
 		showOverlay('report')
 	})
 
-	$('#btn-share').on('click', function(event) {
+	$('#btn-share').on('click', event => {
 		event.preventDefault()
 
 		showOverlay('share')
 	})
 
-	$('#prefetch').on('error', function() {
+	$('#prefetch').on('error', () => {
 		generate('prefetch')
 	})
 
-	$('#image').on('load', function() {
+	$('#image').on('load', () => {
 		persistData('last', getCode($('#image').attr('src'), true))
 	})
 
-	$('#prefetch').on('load', function() {
-		var obj = $('#prefetch')
+	$('#prefetch').on('load', () => {
+		let obj = $('#prefetch')
 
 		if (obj.attr('src') === '') {
 			return
@@ -372,28 +388,30 @@ $(document).ready(function() {
 		if (((obj.naturalWidth() == 161) && (obj.naturalHeight() == 81)) || ((obj.naturalWidth() == 83) && (obj.naturalHeight() == 22))) {
 			generate('prefetch')
 		} else {
-			var code = getCode(obj.attr('src'))
+			let code = getCode(obj.attr('src'))
 
-			$.post(apiUrl + '/api/check', {
-		    	code: code
-			}, function(data) {
-				if (!JSON.parse(data).data) {
-					generate('prefetch')
-				} else {
-					prefetched.push(code)
+		    model.classify(obj[0], 1).then(predictions => {
+		      	if (predictions[0].className === 'Porn') {
+		      		prefetched.push(code)
+
+		      		$.post(`${apiUrl}/api/save`, {
+		      			code: code
+		      		}, data => {})
 
 					if (prefetched.length < prefCount) {
 						generate('prefetch')
 					} else {
 						generationActive = false
 					}
-				}
-			})
+		      	} else {
+		      		generate('prefetch')
+		      	}
+		    })
 		}
 	})
 })
 
-$(document).keydown(function(event) {
+$(document).keydown(event => {
 	if(event.which === 37) {
 		prev()
 	} else if(event.which === 39) {
@@ -418,13 +436,13 @@ $(document).keydown(function(event) {
     }
 })
 
-$(document).on('swipeleft', function(event) {
+$(document).on('swipeleft', event => {
 	event.preventDefault()
 
 	next()
 })
 
-$(document).on('swiperight', function(event) {
+$(document).on('swiperight', event => {
 	event.preventDefault()
 
 	prev()
