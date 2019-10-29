@@ -47,6 +47,7 @@ a:hover {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 10;
 }
 
 .overlay .x {
@@ -144,10 +145,7 @@ a:hover {
   max-height: 100%;
 }
 
-.footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
+.header {
   width: 100%;
   display: flex;
   justify-content: flex-start;
@@ -155,22 +153,29 @@ a:hover {
   z-index: 3;
 }
 
-.footer #logo {
-  border: none;
+.header .logo {
+  width: 170px;
+  font-size: 50px;
   padding: 5px;
 }
 
-.footer .menu {
-  margin-left: auto;
-  margin-right: 200px;
+.header .logo .small {
+  font-size: 13px;
+  display: block;
+  float: right;
 }
 
-.footer .menu a {
+.header .menu {
+  margin-left: auto;
+  margin-right: 20px;
+}
+
+.header .menu a {
   margin-right: 10px;
   font-size: 14pt;
 }
 
-.footer .menu a:hover {
+.header .menu a:hover {
   color: #fff;
   text-decoration: none;
 }

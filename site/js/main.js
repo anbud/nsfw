@@ -1,95 +1,3 @@
-/* natural.js */
-!function(n){for(var t,e=["Width","Height"];t=e.pop();)!function(t,e){n.fn[t]=t in new Image?function(){return this[0][t]}:function(){var n,t,r=this[0];return"img"===r.tagName.toLowerCase()&&((n=new Image).src=r.src,t=n[e]),t}}("natural"+t,t.toLowerCase())}(jQuery);
-
-/* swipe.js */
-/**
- * jquery.detectSwipe v2.1.3
- * jQuery Plugin to obtain touch gestures from iPhone, iPod Touch, iPad and Android
- * http://github.com/marcandre/detect_swipe
- * Based on touchwipe by Andreas Waltl, netCU Internetagentur (http://www.netcu.de)
- */
-
-(function (factory) {
-    if (typeof define === 'function' && define.amd) {
-        // AMD. Register as an anonymous module.
-        define(['jquery'], factory);
-    } else if (typeof exports === 'object') {
-        // Node/CommonJS
-        module.exports = factory(require('jquery'));
-    } else {
-        // Browser globals
-        factory(jQuery);
-    }
-}(function($) {
-
-  $.detectSwipe = {
-    version: '2.1.2',
-    enabled: 'ontouchstart' in document.documentElement,
-    preventDefault: false,
-    threshold: 20
-  };
-
-  var startX,
-    startY,
-    isMoving = false;
-
-  function onTouchEnd() {
-    this.removeEventListener('touchmove', onTouchMove);
-    this.removeEventListener('touchend', onTouchEnd);
-    isMoving = false;
-  }
-
-  function onTouchMove(e) {
-    if ($.detectSwipe.preventDefault) { e.preventDefault(); }
-    if(isMoving) {
-      var x = e.touches[0].pageX;
-      var y = e.touches[0].pageY;
-      var dx = startX - x;
-      var dy = startY - y;
-      var dir;
-      var ratio = window.devicePixelRatio || 1;
-      if(Math.abs(dx) * ratio >= $.detectSwipe.threshold) {
-        dir = dx > 0 ? 'left' : 'right'
-      }
-      else if(Math.abs(dy) * ratio >= $.detectSwipe.threshold) {
-        dir = dy > 0 ? 'up' : 'down'
-      }
-      if(dir) {
-        onTouchEnd.call(this);
-        $(this).trigger('swipe', dir).trigger('swipe' + dir);
-      }
-    }
-  }
-
-  function onTouchStart(e) {
-    if (e.touches.length == 1) {
-      startX = e.touches[0].pageX;
-      startY = e.touches[0].pageY;
-      isMoving = true;
-      this.addEventListener('touchmove', onTouchMove, false);
-      this.addEventListener('touchend', onTouchEnd, false);
-    }
-  }
-
-  function setup() {
-    this.addEventListener && this.addEventListener('touchstart', onTouchStart, false);
-  }
-
-  function teardown() {
-    this.removeEventListener('touchstart', onTouchStart);
-  }
-
-  $.event.special.swipe = { setup: setup };
-
-  $.each(['left', 'up', 'down', 'right'], function () {
-    $.event.special['swipe' + this] = { setup: function(){
-      $(this).on('swipe', $.noop);
-    } };
-  });
-}));
-
-/* main.js */
-
 const apiUrl = 'http://localhost:3200' // 'https://nsfw.ngrok.io'
 
 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -109,24 +17,35 @@ let model
 let modelLoaded = false
 
 const getCode = (url, fullSize) => {
-	return url.replace('https', 'http').replace('http://i.imgur.com/', '').slice(0, fullSize ? -4 : -5)
+	return url.replace(/http[s|]\:\/\/i\.imgur\.com\//, '').slice(0, fullSize ? -4 : -5)
 }
 
-const prefetch = () => {
-	$.post(`${apiUrl}/api/random`, {
-		last: prefetchedApi[prefetchedApi.length - 1]
-	}, data => {
-		data = JSON.parse(data)
+const prefetch = (count = 10) => {
+	return new Promise((resolve, reject) => {
+		const request = new XMLHttpRequest()
 
-		if (data.status === 200) {
-			if (!~order.indexOf(data.data) || Math.random() > 0.4) {
-				prefetchedApi.push(data.data)
+		request.open('POST', `${apiUrl}/api/random`, true)
+
+		request.onload = function() {
+			data = JSON.parse(this.response)
+
+			if (data.status === 200) {
+				if (!~order.indexOf(data.data) || Math.random() > 0.4) {
+					prefetchedApi.push(...data.data)
+
+					resolve()
+				}
 			}
 		}
 
-		if (prefetchedApi.length < prefCount) {
-			prefetch()
-		}
+		request.onerror = () => reject({
+			error: 'Invalid request.'
+		})
+
+		request.send(JSON.stringify({
+			last: prefetchedApi[prefetchedApi.length - 1],
+			count: count
+		}))
 	})
 }
 
@@ -143,9 +62,7 @@ const generate = target => {
 		str += chars.charAt(Math.round(Math.random() * chars.length))
 	}
 
-	let url = `https://i.imgur.com/${str}b.jpg`
-
-	$(`#${target}`).attr('src', url)
+	document.getElementById(target).src = `https://i.imgur.com/${str}b.jpg`
 }
 
 const persistData = (key, value) => {
@@ -169,7 +86,7 @@ const loadData = key => {
 			return url
 		}
 	} else {
-		let cookie = document.cookie.match('(^|;) ?' + key + '=([^;]*)(;|$)')
+		let cookie = document.cookie.match(`(^|;) ?${key}=([^;]*)(;|$)`)
 
 		if (cookie && cookie[2]) {
 			return cookie[2]
@@ -178,22 +95,17 @@ const loadData = key => {
 }
 
 const setImage = (code, move) => {
-	$('#image').attr('src', '')
+	document.getElementById('image').src = `https://i.imgur.com/${code}.jpg`
 
-	$('#image').fadeOut(100, () => {
-		$('#image').attr('src', `https://i.imgur.com/${code}.jpg`)
-		$('#image').fadeIn(500)
-	})
-	
 	if (!move) {
 		order.push(code)
 		index++
 	}
 
 	if (index <= 0) {
-		$('.prev').hide()
+		document.querySelector('.prev').style.display = 'none'
 	} else {
-		$('.prev').show()
+		document.querySelector('.prev').style.display = 'block'
 	}
 }
 
@@ -202,15 +114,96 @@ const loadModel = () => {
 		model = m
 
 		modelLoaded = true
+
 		generate('prefetch')
 	})
 }
 
-const init = () => {
-	loadModel()
+const next = () => {
+	if (index >= order.length - 1) {
+		if (prefetched.length > 0) {
+			setImage(prefetched.shift())
 
+			if (prefetched.length < prefCount && !generationActive) {
+				generate('prefetch')
+			}
+		} else if (prefetchedApi.length > 0) {
+			setImage(prefetchedApi.shift())
+
+			if (prefetchedApi.length < prefCount) {
+				prefetch(prefCount - prefetchedApi.length)
+			}		
+		} else {
+			prefetch().then(data => {
+				setImage(prefetchedApi.shift())
+			})
+		}
+	} else {
+		setImage(order[++index], true)
+	}
+}
+
+const prev = () => {
+	if (order.length > 0 && index > 0) {
+		setImage(order[--index], true)
+	}
+}
+
+const download = () => {
+	const url = document.querySelector('#image').src
+	const link = document.createElement('a')
+	link.href = url
+	link.download = url
+
+	document.body.appendChild(link)
+	link.click()
+	document.body.removeChild(link)
+}
+
+const showOverlay = name => {
+	if (!currentOverlay) {
+		currentOverlay = name
+
+		document.querySelector(`#${name}`).style.display = 'block'
+		document.querySelector('.container').style.display = 'none'
+		document.querySelector('.overlay').style.display = 'flex'
+	}
+}
+
+const hideOverlay = () => {
+	if (currentOverlay) {
+		document.querySelector(`#${currentOverlay}`).style.display = 'none'
+		document.querySelector('.overlay').style.display = 'none'
+		document.querySelector('.container').style.display = 'flex'
+
+		window.location.hash = ''
+
+		currentOverlay = ''
+	}
+}
+
+const showDialog = () => {
+	showOverlay('over18')
+
+	document.querySelector('#over18-yes').addEventListener('click', () => {
+		persistData('over18', 'true')
+
+		hideOverlay()
+
+		init()
+	})
+
+	document.querySelector('#over18-no').addEventListener('click', () => {
+		persistData('over18', 'false')
+
+		window.location = 'https://google.rs/'
+	})
+}
+
+const init = () => {
 	if (!!loadData('over18')) {
 		prefetch()
+		loadModel()
 		
 		let code = loadData('last')
 
@@ -234,169 +227,82 @@ const init = () => {
 	}
 }
 
-const next = () => {
-	if (index >= order.length - 1) {
-		if (prefetched.length > 0) {
-			setImage(prefetched.shift())
-
-			if (prefetched.length < prefCount && !generationActive) {
-				generate('prefetch')
-			}
-		} else if (prefetchedApi.length > 0) {
-			setImage(prefetchedApi.shift())
-
-			if (prefetchedApi.length < prefCount) {
-				prefetch()
-			}		
-		} else {
-			$.post(`${apiUrl}/api/random`, {
-				last: getCode($('#image').attr('src'), true)
-			}, data => {
-				data = JSON.parse(data)
-
-				if (data.status === 200) {
-					setImage(d.data)
-				}
-			})
-		}
-	} else {
-		setImage(order[++index], true)
-	}
-}
-
-const prev = () => {
-	if (order.length > 0 && index > 0) {
-		setImage(order[--index], true)
-	}
-}
-
-const showOverlay = name => {
-	if (!currentOverlay) {
-		currentOverlay = name
-
-		$(`#${name}`).show()
-		$('.container').hide()
-		$('.overlay').fadeIn(300)
-		$('.footer .menu').animate({
-			'margin-right': '10px'
-		})
-	}
-}
-
-const hideOverlay = () => {
-	if (currentOverlay) {
-		$(`#${currentOverlay}`).hide()
-		$('.overlay').fadeOut(300)
-		$('.container').show()
-		$('.footer .menu').animate({
-			'margin-right': '200px'
-		})
-
-		window.location.hash = ''
-
-		currentOverlay = ''
-	}
-}
-
-const showDialog = () => {
-	showOverlay('over18')
-
-	$('#over18-yes').on('click', () => {
-		persistData('over18', 'true')
-
-		hideOverlay()
-
-		init()
-	})
-
-	$('#over18-no').on('click', () => {
-		persistData('over18', 'false')
-
-		window.location = 'https://google.rs/'
-	})
-}
-
-$(document).ready(() => {
+document.addEventListener('DOMContentLoaded', () => {
 	init()
 	
-	$('.next').on('click', event => {
+	document.querySelector('.next').addEventListener('click', event => {
 		event.preventDefault()
 
 		next()
 	})
 
-	$('.prev').on('click', event => {
+	document.querySelector('.prev').addEventListener('click', event => {
 		event.preventDefault()
 
 		prev()
 	})
 
-	$('.x').on('click', event => {
+	document.querySelector('.x').addEventListener('click', event => {
 		event.preventDefault()
 
 		hideOverlay()
 	})
 
-	$('#btn-about').on('click', event => {
+	document.querySelector('#btn-about').addEventListener('click', event => {
 		event.preventDefault()
 
 		showOverlay('about')
 		window.location.hash = '#about'
 	})
 
-	$('#btn-tos').on('click', event => {
+	document.querySelector('#btn-tos').addEventListener('click', event => {
 		event.preventDefault()
 
 		showOverlay('tos')
 		window.location.hash = '#tos'
 	})
 
-	$('#btn-privacy').on('click', event => {
+	document.querySelector('#btn-privacy').addEventListener('click', event => {
 		event.preventDefault()
 
 		showOverlay('privacy')
 		window.location.hash = '#privacy'
 	})
 
-	$('#btn-report').on('click', event => {
+	document.querySelector('#btn-download').addEventListener('click', event => {
 		event.preventDefault()
 
-		showOverlay('report')
+		download()
 	})
 
-	$('#btn-share').on('click', event => {
-		event.preventDefault()
-
-		showOverlay('share')
-	})
-
-	$('#prefetch').on('error', () => {
+	document.querySelector('#prefetch').addEventListener('error', () => {
 		generate('prefetch')
 	})
 
-	$('#image').on('load', () => {
-		persistData('last', getCode($('#image').attr('src'), true))
+	document.querySelector('#image').addEventListener('load', event => {
+		persistData('last', getCode(event.target.src, true))
 	})
 
-	$('#prefetch').on('load', () => {
-		let obj = $('#prefetch')
-
-		if (obj.attr('src') === '') {
-			return
+	document.querySelector('#prefetch').addEventListener('load', event => {
+		if (event.target.src === '') {
+			generate('prefetch')
 		}
 
-		if (((obj.naturalWidth() == 161) && (obj.naturalHeight() == 81)) || ((obj.naturalWidth() == 83) && (obj.naturalHeight() == 22))) {
+		if ((event.target.naturalWidth === 161 && event.target.naturalHeight === 81)) {
 			generate('prefetch')
 		} else {
-			let code = getCode(obj.attr('src'))
+			let code = getCode(event.target.src)
 
-		    model.classify(obj[0], 1).then(predictions => {
+		    model.classify(event.target, 1).then(predictions => {
 		      	if (predictions[0].className === 'Porn') {
 		      		prefetched.push(code)
 
-		      		$.post(`${apiUrl}/api/save`, {
-		      			code: code
-		      		}, data => {})
+		      		const request = new XMLHttpRequest()
+
+					request.open('POST', `${apiUrl}/api/save`, true)
+					request.send(JSON.stringify({
+						code: code
+					}))
 
 					if (prefetched.length < prefCount) {
 						generate('prefetch')
@@ -411,7 +317,7 @@ $(document).ready(() => {
 	})
 })
 
-$(document).keydown(event => {
+document.addEventListener('keydown', event => {
 	if(event.which === 37) {
 		prev()
 	} else if(event.which === 39) {
@@ -424,26 +330,10 @@ $(document).keydown(event => {
             event.preventDefault()
             showOverlay('about')
             break
-        case 'r':
+        case 'o':
             event.preventDefault()
-            showOverlay('report')
-            break
-        case 's':
-            event.preventDefault()
-            showOverlay('share')
+            download()
             break
         }
     }
-})
-
-$(document).on('swipeleft', event => {
-	event.preventDefault()
-
-	next()
-})
-
-$(document).on('swiperight', event => {
-	event.preventDefault()
-
-	prev()
 })

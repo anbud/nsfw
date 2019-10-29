@@ -25,13 +25,13 @@ app.get('/', (req, res) => {
 })
 
 app.post('/api/random', (req, res) => {
-	redis.srandmember('nsfw', 2).then(data => {
+	redis.srandmember('nsfw', Number(req.body.count || 10) + 1).then(data => {
 		if (data && data.length > 0) {
 			data = data.filter(i => i !== req.body.last)
 
 			res.send(JSON.stringify({
 				status: 200,
-				data: data[0]
+				data: data
 			}))
 		} else {
 			res.send(JSON.stringify({
