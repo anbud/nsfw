@@ -16,324 +16,347 @@ let currentOverlay = ''
 let model
 let modelLoaded = false
 
+let worker
+
+const canvas = document.createElement('canvas')
+const context = canvas.getContext('2d')
+canvas.width = 160
+canvas.height = 160
+
 const getCode = (url, fullSize) => {
-	return url.replace(/http[s|]\:\/\/i\.imgur\.com\//, '').slice(0, fullSize ? -4 : -5)
+    return url
+        .replace(/http[s|]\:\/\/i\.imgur\.com\//, '')
+        .slice(0, fullSize ? -4 : -5)
 }
 
 const prefetch = (count = 10) => {
-	return new Promise((resolve, reject) => {
-		const request = new XMLHttpRequest()
+    return new Promise((resolve, reject) => {
+        const request = new XMLHttpRequest()
 
-		request.open('POST', `${apiUrl}/api/random`, true)
+        request.open('POST', `${apiUrl}/api/random`, true)
 
-		request.onload = function() {
-			data = JSON.parse(this.response)
+        request.onload = function() {
+            data = JSON.parse(this.response)
 
-			if (data.status === 200) {
-				if (!~order.indexOf(data.data) || Math.random() > 0.4) {
-					prefetchedApi.push(...data.data)
+            if (data.status === 200) {
+                if (!~order.indexOf(data.data) || Math.random() > 0.4) {
+                    prefetchedApi.push(...data.data)
 
-					resolve()
-				}
-			}
-		}
+                    resolve()
+                }
+            }
+        }
 
-		request.onerror = () => reject({
-			error: 'Invalid request.'
-		})
+        request.onerror = () =>
+            reject({
+                error: 'Invalid request.',
+            })
 
-		request.send(JSON.stringify({
-			last: prefetchedApi[prefetchedApi.length - 1],
-			count: count
-		}))
-	})
+        request.send(
+            JSON.stringify({
+                last: prefetchedApi[prefetchedApi.length - 1],
+                count: count,
+            })
+        )
+    })
 }
 
 const generate = target => {
-	if (!modelLoaded) {
-		return
-	}
+    if (!modelLoaded) {
+        return
+    }
 
-	generationActive = true
+    generationActive = true
 
-	let str = ''
+    let str = ''
 
-	for (let i = 0; i < len; i++) {
-		str += chars.charAt(Math.round(Math.random() * chars.length))
-	}
+    for (let i = 0; i < len; i++) {
+        str += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
 
-	document.getElementById(target).src = `https://i.imgur.com/${str}b.jpg`
+    document.getElementById(target).src = `https://i.imgur.com/${str}b.jpg`
 }
 
 const persistData = (key, value) => {
-	try {
-		if (localStorage) {
-			localStorage.setItem(key, value)
-		} else {
-			let expires = new Date()
+    try {
+        if (localStorage) {
+            localStorage.setItem(key, value)
+        } else {
+            let expires = new Date()
 
-	        expires.setTime(expires.getTime() + (7 * 24 * 60 * 60 * 1000))
-	        document.cookie = `${key}=${value};expires=${expires.toUTCString()}`
-		}
-	} catch (e) {}
+            expires.setTime(expires.getTime() + 7 * 24 * 60 * 60 * 1000)
+            document.cookie = `${key}=${value};expires=${expires.toUTCString()}`
+        }
+    } catch (e) {}
 }
 
 const loadData = key => {
-	if (localStorage) {
-		let url = localStorage.getItem(key)
+    if (localStorage) {
+        let url = localStorage.getItem(key)
 
-		if (url) {
-			return url
-		}
-	} else {
-		let cookie = document.cookie.match(`(^|;) ?${key}=([^;]*)(;|$)`)
+        if (url) {
+            return url
+        }
+    } else {
+        let cookie = document.cookie.match(`(^|;) ?${key}=([^;]*)(;|$)`)
 
-		if (cookie && cookie[2]) {
-			return cookie[2]
-		}
-	}
+        if (cookie && cookie[2]) {
+            return cookie[2]
+        }
+    }
 }
 
 const setImage = (code, move) => {
-	document.getElementById('image').src = `https://i.imgur.com/${code}.jpg`
+    document.getElementById('image').src = `https://i.imgur.com/${code}.jpg`
 
-	if (!move) {
-		order.push(code)
-		index++
-	}
+    if (!move) {
+        order.push(code)
+        index++
+    }
 
-	if (index <= 0) {
-		document.querySelector('.prev').style.display = 'none'
-	} else {
-		document.querySelector('.prev').style.display = 'block'
-	}
+    if (index <= 0) {
+        document.querySelector('.prev').style.display = 'none'
+    } else {
+        document.querySelector('.prev').style.display = 'block'
+    }
 }
 
 const loadModel = () => {
-	nsfwjs.load('/model/').then(m => {
-		model = m
+    nsfwjs.load('/model/').then(m => {
+        model = m
 
-		modelLoaded = true
+        modelLoaded = true
 
-		generate('prefetch')
-	})
+        generate('prefetch')
+    })
 }
 
 const next = () => {
-	if (index >= order.length - 1) {
-		if (prefetched.length > 0) {
-			setImage(prefetched.shift())
+    if (index >= order.length - 1) {
+        if (prefetched.length > 0) {
+            setImage(prefetched.shift())
 
-			if (prefetched.length < prefCount && !generationActive) {
-				generate('prefetch')
-			}
-		} else if (prefetchedApi.length > 0) {
-			setImage(prefetchedApi.shift())
+            if (prefetched.length < prefCount && !generationActive) {
+                generate('prefetch')
+            }
+        } else if (prefetchedApi.length > 0) {
+            setImage(prefetchedApi.shift())
 
-			if (prefetchedApi.length < prefCount) {
-				prefetch(prefCount - prefetchedApi.length)
-			}		
-		} else {
-			prefetch().then(data => {
-				setImage(prefetchedApi.shift())
-			})
-		}
-	} else {
-		setImage(order[++index], true)
-	}
+            if (prefetchedApi.length < prefCount) {
+                prefetch(prefCount - prefetchedApi.length)
+            }
+        } else {
+            prefetch().then(data => {
+                setImage(prefetchedApi.shift())
+            })
+        }
+    } else {
+        setImage(order[++index], true)
+    }
 }
 
 const prev = () => {
-	if (order.length > 0 && index > 0) {
-		setImage(order[--index], true)
-	}
+    if (order.length > 0 && index > 0) {
+        setImage(order[--index], true)
+    }
 }
 
 const download = () => {
-	const url = document.querySelector('#image').src
-	const link = document.createElement('a')
-	link.href = url
-	link.download = url
+    const url = document.querySelector('#image').src
+    const link = document.createElement('a')
+    link.href = url
+    link.download = url
 
-	document.body.appendChild(link)
-	link.click()
-	document.body.removeChild(link)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
 }
 
 const showOverlay = name => {
-	if (!currentOverlay) {
-		currentOverlay = name
+    if (!currentOverlay) {
+        currentOverlay = name
 
-		document.querySelector(`#${name}`).style.display = 'block'
-		document.querySelector('.container').style.display = 'none'
-		document.querySelector('.overlay').style.display = 'flex'
-	}
+        document.querySelector(`#${name}`).style.display = 'block'
+        document.querySelector('.container').style.display = 'none'
+        document.querySelector('.overlay').style.display = 'flex'
+    }
 }
 
 const hideOverlay = () => {
-	if (currentOverlay) {
-		document.querySelector(`#${currentOverlay}`).style.display = 'none'
-		document.querySelector('.overlay').style.display = 'none'
-		document.querySelector('.container').style.display = 'flex'
+    if (currentOverlay) {
+        document.querySelector(`#${currentOverlay}`).style.display = 'none'
+        document.querySelector('.overlay').style.display = 'none'
+        document.querySelector('.container').style.display = 'flex'
 
-		window.location.hash = ''
+        window.location.hash = ''
 
-		currentOverlay = ''
-	}
+        currentOverlay = ''
+    }
 }
 
 const showDialog = () => {
-	showOverlay('over18')
+    showOverlay('over18')
 
-	document.querySelector('#over18-yes').addEventListener('click', () => {
-		persistData('over18', 'true')
+    document.querySelector('#over18-yes').addEventListener('click', () => {
+        persistData('over18', 'true')
 
-		hideOverlay()
+        hideOverlay()
 
-		init()
-	})
+        init()
+    })
 
-	document.querySelector('#over18-no').addEventListener('click', () => {
-		persistData('over18', 'false')
+    document.querySelector('#over18-no').addEventListener('click', () => {
+        persistData('over18', 'false')
 
-		window.location = 'https://google.rs/'
-	})
+        window.location = 'https://google.rs/'
+    })
 }
 
 const init = () => {
-	if (!!loadData('over18')) {
-		prefetch()
-		loadModel()
-		
-		let code = loadData('last')
+    worker = new Worker('/js/worker.js')
 
-		if (code) {
-			setImage(code)
-		} else {
-			next()
-		}
+    worker.addEventListener('message', event => {
+        if (event.data.data.loaded) {
+            modelLoaded = true
 
-		if (window.location.hash) {
-			if (window.location.hash === '#tos') {
-				showOverlay('tos')
-			} else if (window.location.hash === '#about') {
-				showOverlay('about')
-			} else if (window.location.hash === '#privacy') {
-				showOverlay('privacy')
-			}
-		}
-	} else {
-		showDialog()
-	}
+            return generate('prefetch')
+        }
+
+        if (event.data.data.result) {
+            prefetched.push(event.data.data.code)
+
+            const request = new XMLHttpRequest()
+
+            request.open('POST', `${apiUrl}/api/save`, true)
+            request.send(
+                JSON.stringify({
+                    code: event.data.data.code,
+                })
+            )
+
+            if (prefetched.length < prefCount) {
+                generate('prefetch')
+            } else {
+                generationActive = false
+            }
+        } else {
+            generate('prefetch')
+        }
+    })
+
+    if (!!loadData('over18')) {
+        prefetch()
+
+        let code = loadData('last')
+
+        if (code) {
+            setImage(code)
+        } else {
+            next()
+        }
+
+        if (window.location.hash) {
+            if (window.location.hash === '#about') {
+                showOverlay('about')
+            }
+        }
+    } else {
+        showDialog()
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-	init()
-	
-	document.querySelector('.next').addEventListener('click', event => {
-		event.preventDefault()
+    init()
 
-		next()
-	})
+    document.querySelector('.next').addEventListener('click', event => {
+        event.preventDefault()
 
-	document.querySelector('.prev').addEventListener('click', event => {
-		event.preventDefault()
+        next()
+    })
 
-		prev()
-	})
+    document.querySelector('.prev').addEventListener('click', event => {
+        event.preventDefault()
 
-	document.querySelector('.x').addEventListener('click', event => {
-		event.preventDefault()
+        prev()
+    })
 
-		hideOverlay()
-	})
+    document.querySelector('.x').addEventListener('click', event => {
+        event.preventDefault()
 
-	document.querySelector('#btn-about').addEventListener('click', event => {
-		event.preventDefault()
+        hideOverlay()
+    })
 
-		showOverlay('about')
-		window.location.hash = '#about'
-	})
+    document.querySelector('#btn-about').addEventListener('click', event => {
+        event.preventDefault()
 
-	document.querySelector('#btn-tos').addEventListener('click', event => {
-		event.preventDefault()
+        showOverlay('about')
+        window.location.hash = '#about'
+    })
 
-		showOverlay('tos')
-		window.location.hash = '#tos'
-	})
+    document.querySelector('#btn-download').addEventListener('click', event => {
+        event.preventDefault()
 
-	document.querySelector('#btn-privacy').addEventListener('click', event => {
-		event.preventDefault()
+        download()
+    })
 
-		showOverlay('privacy')
-		window.location.hash = '#privacy'
-	})
+    document.querySelector('#prefetch').addEventListener('error', () => {
+        generate('prefetch')
+    })
 
-	document.querySelector('#btn-download').addEventListener('click', event => {
-		event.preventDefault()
+    document.querySelector('#image').addEventListener('load', event => {
+        persistData('last', getCode(event.target.src, true))
+    })
 
-		download()
-	})
+    document.querySelector('#prefetch').addEventListener('load', event => {
+        if (event.target.src.includes('/loader.apng')) {
+            return
+        }
 
-	document.querySelector('#prefetch').addEventListener('error', () => {
-		generate('prefetch')
-	})
+        if (event.target.src === '') {
+            generate('prefetch')
+        }
 
-	document.querySelector('#image').addEventListener('load', event => {
-		persistData('last', getCode(event.target.src, true))
-	})
+        if (
+            event.target.naturalWidth === 161 &&
+            event.target.naturalHeight === 81
+        ) {
+            generate('prefetch')
+        } else {
+            let code = getCode(event.target.src)
 
-	document.querySelector('#prefetch').addEventListener('load', event => {
-		if (event.target.src === '') {
-			generate('prefetch')
-		}
+            context.clearRect(0, 0, 160, 160)
+            context.drawImage(event.target, 0, 0)
 
-		if ((event.target.naturalWidth === 161 && event.target.naturalHeight === 81)) {
-			generate('prefetch')
-		} else {
-			let code = getCode(event.target.src)
-
-		    model.classify(event.target, 1).then(predictions => {
-		      	if (predictions[0].className === 'Porn') {
-		      		prefetched.push(code)
-
-		      		const request = new XMLHttpRequest()
-
-					request.open('POST', `${apiUrl}/api/save`, true)
-					request.send(JSON.stringify({
-						code: code
-					}))
-
-					if (prefetched.length < prefCount) {
-						generate('prefetch')
-					} else {
-						generationActive = false
-					}
-		      	} else {
-		      		generate('prefetch')
-		      	}
-		    })
-		}
-	})
+            worker.postMessage({
+                img: context.getImageData(
+                    0,
+                    0,
+                    event.target.width,
+                    event.target.height
+                ),
+                code: code,
+            })
+        }
+    })
 })
 
 document.addEventListener('keydown', event => {
-	if(event.which === 37) {
-		prev()
-	} else if(event.which === 39) {
-		next()
-	} else if (event.keyCode === 27) {
-		hideOverlay()
-	} else if (event.ctrlKey || event.metaKey) {
+    if (event.which === 37) {
+        prev()
+    } else if (event.which === 39) {
+        next()
+    } else if (event.keyCode === 27) {
+        hideOverlay()
+    } else if (event.ctrlKey || event.metaKey) {
         switch (String.fromCharCode(event.which).toLowerCase()) {
-        case 'a':
-            event.preventDefault()
-            showOverlay('about')
-            break
-        case 'o':
-            event.preventDefault()
-            download()
-            break
+            case 'a':
+                event.preventDefault()
+                showOverlay('about')
+                break
+            case 'o':
+                event.preventDefault()
+                download()
+                break
         }
     }
 })

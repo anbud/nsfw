@@ -21,41 +21,47 @@ app.use(minify())
 app.use(express.static('site'))
 
 app.get('/', (req, res) => {
-	res.send('NSFW.rs API Endpoints')
+    res.send('NSFW.rs API Endpoints')
 })
 
 app.post('/api/random', (req, res) => {
-	redis.srandmember('nsfw', Number(req.body.count || 10) + 1).then(data => {
-		if (data && data.length > 0) {
-			data = data.filter(i => i !== req.body.last)
+    redis.srandmember('nsfw', Number(req.body.count || 10) + 1).then(data => {
+        if (data && data.length > 0) {
+            data = data.filter(i => i !== req.body.last)
 
-			res.send(JSON.stringify({
-				status: 200,
-				data: data
-			}))
-		} else {
-			res.send(JSON.stringify({
-				status: 404,
-				error: '[404] Data not found.'
-			}))
-		}
-	})
+            res.send(
+                JSON.stringify({
+                    status: 200,
+                    data: data,
+                })
+            )
+        } else {
+            res.send(
+                JSON.stringify({
+                    status: 404,
+                    error: '[404] Data not found.',
+                })
+            )
+        }
+    })
 })
 
 app.post('/api/save', (req, res) => {
-	if (req.body.code) {
-		redis.sadd('nsfw', req.body.code)
+    if (req.body.code) {
+        redis.sadd('nsfw', req.body.code)
 
-		res.send(JSON.stringify({
-			status: 200,
-			data: true
-	    }))
-	} else {
-		res.send(JSON.stringify({
-			status: 400,
-			error: '[400] Missing code parameter.'
-		}))
-	}
+        res.send(
+            JSON.stringify({
+                status: 200,
+                data: true,
+            })
+        )
+    } else {
+        res.send(
+            JSON.stringify({
+                status: 400,
+                error: '[400] Missing code parameter.',
+            })
+        )
+    }
 })
-
-

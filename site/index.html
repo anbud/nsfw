@@ -5,6 +5,8 @@
     	<link rel="stylesheet" type="text/css" href="/css/main.css">
 
     	<title>NSFW.rs | Random nsfw images</title>
+
+    	<script type="text/javascript" src="/js/main.js" defer></script> 
   	</head>
   	<body>
   		<div class="header">
@@ -21,7 +23,7 @@
 	  			</a>
 	  		</div>
 	  	</div>
-	  	
+
 	  	<div class="container">
 	    	<img src="" id="image" />
 
@@ -33,7 +35,6 @@
 			<img crossorigin="anonymous" src="/css/loader.apng" id="prefetch" width="160" height="160" />
 		</div>
 		<div class="overlay" style="display: none;">
-			<!---->
 			<div id="over18" style="display: none;">
 		    	<h1>Not Safe For Work</h1>
 
@@ -49,13 +50,8 @@
 		    	<h1>NSFW<span class="accent">rs</span></h1>
 
 			    <p class="main">Have you ever wondered what lies in the hidden corners of <a href="https://imgur.com/">Imgur</a>? Now you have a chance to explore it in full. NSFW<span class="accent">rs</span> generates random Imgur image urls, feeds them to a complex machine learning algorithm for NSFW content detection based on neural networks to filter out non-NSFW content, and shows you totally random NSFW images. Please note that results contain <span class="accent">nudity</span>.</p>
-			    <p>Please see our <a href="#" id="btn-privacy">privacy policy</a> and <a href="#" id="btn-tos">terms of service</a>.</p>
 			    <p>Made with <span class="accent">&lt;3</span> by <a href="http://zx.rs/">zx.rs</a></p>
 			</div>
 		</div>
-
-	  	<script src="https://unpkg.com/@tensorflow/tfjs@1.2.8" type="text/javascript"></script>
-		<script src="https://unpkg.com/nsfwjs" type="text/javascript"></script>
-	    <script type="text/javascript" src="/js/main.js"></script> 
 	</body>
 </html>
