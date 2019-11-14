@@ -23,13 +23,9 @@ if (typeof OffscreenCanvas !== 'undefined') {
         }
     }
 
-    // @ts-ignore
     this.HTMLCanvasElement = CanvasMock
 }
 
-importScripts(
-    'https://cdn.jsdelivr.net/npm/setimmediate@1.0.5/setImmediate.min.js'
-)
 importScripts('https://unpkg.com/@tensorflow/tfjs@1.2.8/dist/tf.min.js')
 importScripts('https://unpkg.com/nsfwjs@2.1.0/dist/nsfwjs.min.js')
 

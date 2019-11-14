@@ -1,7 +1,6 @@
 const apiUrl = 'http://localhost:3200' // 'https://nsfw.ngrok.io'
 
 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-const len = 5
 const prefCount = 10
 
 let prefetched = []
@@ -12,6 +11,8 @@ let index = -1
 
 let generationActive = false
 let currentOverlay = ''
+
+let canDelegateToWorker = typeof OffscreenCanvas !== 'undefined'
 
 let model
 let modelLoaded = false
@@ -31,33 +32,36 @@ const getCode = (url, fullSize) => {
 
 const prefetch = (count = 10) => {
     return new Promise((resolve, reject) => {
-        const request = new XMLHttpRequest()
-
-        request.open('POST', `${apiUrl}/api/random`, true)
-
-        request.onload = function() {
-            data = JSON.parse(this.response)
-
-            if (data.status === 200) {
-                if (!~order.indexOf(data.data) || Math.random() > 0.4) {
-                    prefetchedApi.push(...data.data)
-
-                    resolve()
-                }
-            }
-        }
-
-        request.onerror = () =>
-            reject({
-                error: 'Invalid request.',
-            })
-
-        request.send(
-            JSON.stringify({
+        fetch(`${apiUrl}/api/random`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
                 last: prefetchedApi[prefetchedApi.length - 1],
                 count: count,
+            }),
+        })
+            .then(res => {
+                if (res.ok) {
+                    res.json().then(data => {
+                        if (!~order.indexOf(data.data) || Math.random() > 0.4) {
+                            prefetchedApi.push(...data.data)
+
+                            resolve()
+                        }
+                    })
+                } else {
+                    reject({
+                        error: 'Invalid request.',
+                    })
+                }
             })
-        )
+            .catch(err => {
+                reject({
+                    error: 'Invalid request.',
+                })
+            })
     })
 }
 
@@ -70,11 +74,28 @@ const generate = target => {
 
     let str = ''
 
+    let len = Math.random() < 0.5 ? 5 : 7
+
     for (let i = 0; i < len; i++) {
         str += chars.charAt(Math.floor(Math.random() * chars.length))
     }
 
-    document.getElementById(target).src = `https://i.imgur.com/${str}b.jpg`
+    const url = `https://i.imgur.com/${str}b.jpg`
+
+    fetch(url, {
+        method: 'HEAD',
+        redirect: 'manual',
+    })
+        .then(res => {
+            if (res.ok && res.type === 'cors') {
+                document.querySelector(`#${target}`).src = url
+            } else {
+                generate('prefetch')
+            }
+        })
+        .catch(err => {
+            generate('prefetch')
+        })
 }
 
 const persistData = (key, value) => {
@@ -107,7 +128,7 @@ const loadData = key => {
 }
 
 const setImage = (code, move) => {
-    document.getElementById('image').src = `https://i.imgur.com/${code}.jpg`
+    document.querySelector('#image').src = `https://i.imgur.com/${code}.jpg`
 
     if (!move) {
         order.push(code)
@@ -162,10 +183,13 @@ const prev = () => {
 }
 
 const download = () => {
-    const url = document.querySelector('#image').src
+    const url = `https://imgur.com/download/${getCode(
+        document.querySelector('#image').src,
+        true
+    )}/`
     const link = document.createElement('a')
     link.href = url
-    link.download = url
+    link._target = 'blank'
 
     document.body.appendChild(link)
     link.click()
@@ -213,36 +237,41 @@ const showDialog = () => {
 }
 
 const init = () => {
-    worker = new Worker('/js/worker.js')
+    if (canDelegateToWorker) {
+        worker = new Worker('/js/worker.js')
 
-    worker.addEventListener('message', event => {
-        if (event.data.data.loaded) {
-            modelLoaded = true
+        worker.addEventListener('message', event => {
+            if (event.data.data.loaded) {
+                modelLoaded = true
 
-            return generate('prefetch')
-        }
-
-        if (event.data.data.result) {
-            prefetched.push(event.data.data.code)
-
-            const request = new XMLHttpRequest()
-
-            request.open('POST', `${apiUrl}/api/save`, true)
-            request.send(
-                JSON.stringify({
-                    code: event.data.data.code,
-                })
-            )
-
-            if (prefetched.length < prefCount) {
-                generate('prefetch')
-            } else {
-                generationActive = false
+                return generate('prefetch')
             }
-        } else {
-            generate('prefetch')
-        }
-    })
+
+            if (event.data.data.result) {
+                prefetched.push(event.data.data.code)
+
+                fetch(`${apiUrl}/api/save`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        code: event.data.data.code,
+                    }),
+                })
+
+                if (prefetched.length < prefCount) {
+                    generate('prefetch')
+                } else {
+                    generationActive = false
+                }
+            } else {
+                generate('prefetch')
+            }
+        })
+    } else {
+        loadModel()
+    }
 
     if (!!loadData('over18')) {
         prefetch()
@@ -324,18 +353,44 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             let code = getCode(event.target.src)
 
-            context.clearRect(0, 0, 160, 160)
-            context.drawImage(event.target, 0, 0)
+            if (canDelegateToWorker) {
+                context.clearRect(0, 0, 160, 160)
+                context.drawImage(event.target, 0, 0)
 
-            worker.postMessage({
-                img: context.getImageData(
-                    0,
-                    0,
-                    event.target.width,
-                    event.target.height
-                ),
-                code: code,
-            })
+                worker.postMessage({
+                    img: context.getImageData(
+                        0,
+                        0,
+                        event.target.width,
+                        event.target.height
+                    ),
+                    code: code,
+                })
+            } else {
+                model.classify(event.target, 1).then(predictions => {
+                    if (predictions[0].className === 'Porn') {
+                        prefetched.push(code)
+
+                        fetch(`${apiUrl}/api/save`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                code: code,
+                            }),
+                        })
+
+                        if (prefetched.length < prefCount) {
+                            generate('prefetch')
+                        } else {
+                            generationActive = false
+                        }
+                    } else {
+                        generate('prefetch')
+                    }
+                })
+            }
         }
     })
 })
