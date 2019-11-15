@@ -45,11 +45,13 @@ const prefetch = (count = 10) => {
             .then(res => {
                 if (res.ok) {
                     res.json().then(data => {
-                        if (!~order.indexOf(data.data) || Math.random() > 0.4) {
-                            prefetchedApi.push(...data.data)
-
-                            resolve()
-                        }
+                    	data.data.forEach(code => {
+                    		if (!~order.indexOf(code) || Math.random() < 0.2) {
+                            	prefetchedApi.push(code)
+                            }
+                    	})
+                        
+                        resolve()
                     })
                 } else {
                     reject({
@@ -189,7 +191,6 @@ const download = () => {
     )}/`
     const link = document.createElement('a')
     link.href = url
-    link._target = 'blank'
 
     document.body.appendChild(link)
     link.click()
